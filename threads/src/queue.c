@@ -16,6 +16,10 @@ void queue_init(struct queue *q) {
     q->tail = NULL;
 }
 
+bool queue_is_empty(struct queue *q) {
+    return q->head == NULL;
+}
+
 // SAFETY: this is non-reentrant,
 // and caller asserts that:
 // 1. `q` is init
@@ -47,7 +51,7 @@ void queue_push(struct queue *q, struct queue_entry *entry) {
 
     pthread_mutex_lock(&q->lock);
 
-    if (q->tail == NULL) {
+    if (queue_is_empty(q)) {
         q->tail = entry;
         q->head = q->tail;
     } else {
@@ -63,7 +67,7 @@ struct queue_entry *queue_pop(struct queue *q) {
 
     struct queue_entry *entry = NULL;
 
-    if (q->head != NULL) {
+    if (!queue_is_empty(q)) {
         entry = q->head;
 
         q->head = q->head->next;
