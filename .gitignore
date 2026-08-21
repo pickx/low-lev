@@ -3,3 +3,6 @@ target/
 program*
 *.epub
 threads/old_instructions/
+threads/queue_values.txt
+compile_commands.json
+refresh-compdb.nu
