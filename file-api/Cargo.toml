@@ -1,0 +1,11 @@
+[package]
+name = "low-lev"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+easy-ext = "1.0.3"
+libc = "0.2.186"
+rand = "0.10.2"
+rstest = "0.26.1"
+tempfile = "3.27.0"
