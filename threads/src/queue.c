@@ -1,23 +1,50 @@
 #include "queue.h"
 #include <assert.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 // SAFETY: this is non-reentrant.
-void queue_init(struct queue *q) {
-    int ret = pthread_mutex_init(&q->lock, NULL);
+void queue_init(struct queue *q, size_t capacity) {
+    int ret;
+
+    ret = pthread_mutex_init(&q->lock, NULL);
+
     if (ret != 0) {
         fprintf(stderr, "pthread_mutex_init: %s\n", strerror(ret));
         exit(EXIT_FAILURE);
     }
+
+    ret = pthread_cond_init(&q->not_empty, NULL);
+
+    if (ret != 0) {
+        fprintf(stderr, "pthread_cond_init of not_empty: %s\n", strerror(ret));
+        exit(EXIT_FAILURE);
+    }
+
+    ret = pthread_cond_init(&q->not_full, NULL);
+
+    if (ret != 0) {
+        fprintf(stderr, "pthread_cond_init of not_full: %s\n", strerror(ret));
+        exit(EXIT_FAILURE);
+    }
+
+    q->len = 0;
+
+    assert(capacity >= 0);
+    q->capacity = capacity;
 
     q->head = NULL;
     q->tail = NULL;
 }
 
 bool queue_is_empty(struct queue *q) {
-    return q->head == NULL;
+    return q->len == 0;
+}
+
+bool queue_is_full(struct queue *q) {
+    return q->len >= q->capacity;
 }
 
 // SAFETY: this is non-reentrant,
@@ -43,6 +70,7 @@ void queue_destroy(struct queue *q, bool free_list_entries) {
 
     q->head = NULL;
     q->tail = NULL;
+    q->len = 0;
 }
 
 void queue_push(struct queue *q, struct queue_entry *entry) {
@@ -50,6 +78,11 @@ void queue_push(struct queue *q, struct queue_entry *entry) {
     entry->next = NULL;
 
     pthread_mutex_lock(&q->lock);
+
+    while (queue_is_full(q)) {
+        // same comments as the `pthread_cond_wait` in `queue_pop`
+        pthread_cond_wait(&q->not_full, &q->lock);
+    }
 
     if (queue_is_empty(q)) {
         q->tail = entry;
@@ -59,6 +92,14 @@ void queue_push(struct queue *q, struct queue_entry *entry) {
         q->tail = entry;
     }
 
+    q->len += 1;
+    pthread_cond_signal(&q->not_empty);
+
+    // as the signature of `pthread_cond_signal` shows,
+    // signalling does not unlock the mutex.
+    // it is only on releasing the mutex,
+    // that something waiting on mutex _might_ wake up
+    // from the signal above
     pthread_mutex_unlock(&q->lock);
 }
 
@@ -67,18 +108,30 @@ struct queue_entry *queue_pop(struct queue *q) {
 
     struct queue_entry *entry = NULL;
 
-    if (!queue_is_empty(q)) {
-        entry = q->head;
-
-        q->head = q->head->next;
-        if (q->head == NULL) {
-            q->tail = NULL;
-        }
-
-        // must be done after advancing head,
-        // ...else we're mutating the list.
-        entry->next = NULL;
+    while (queue_is_empty(q)) {
+        // this releases the mutex...
+        pthread_cond_wait(&q->not_empty, &q->lock);
+        // ...and now that we're back here,
+        // we have the mutex again.
+        // however, we still need to re-check for NULL,
+        // (hence this is a `while` loop), and this is because:
+        // 1. race condition with other calls to this function
+        // 2. spurious wakeups
     }
+
+    entry = q->head;
+
+    q->head = q->head->next;
+    if (q->head == NULL) {
+        q->tail = NULL;
+    }
+
+    // must be done after advancing head,
+    // ...else we're mutating the list.
+    entry->next = NULL;
+
+    q->len -= 1;
+    pthread_cond_signal(&q->not_full);
 
     pthread_mutex_unlock(&q->lock);
 

@@ -94,7 +94,8 @@ static void check_ret(int ret, const char *func_name) {
 int main() {
     struct queue q;
 
-    queue_init(&q);
+    size_t capacity = 150;
+    queue_init(&q, capacity);
 
     int ret;
 
