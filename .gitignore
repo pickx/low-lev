@@ -1,0 +1,5 @@
+.DS_Store
+target/
+program*
+*.epub
+threads/old_instructions/
