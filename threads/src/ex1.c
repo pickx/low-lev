@@ -1,4 +1,5 @@
 #include "queue.h"
+#include <assert.h>
 #include <limits.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -18,6 +19,8 @@
 
 static void alloc_and_push(struct queue *q, int value) {
     struct queue_entry *entry = malloc(sizeof(struct queue_entry));
+    assert(entry != NULL);
+
     entry->value = value;
 
     queue_push(q, entry);

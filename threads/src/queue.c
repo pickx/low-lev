@@ -1,4 +1,5 @@
 #include "queue.h"
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,14 +36,13 @@ void queue_destroy(struct queue *q, bool free_list_entries) {
             entry = next;
         }
     }
+
+    q->head = NULL;
+    q->tail = NULL;
 }
 
 void queue_push(struct queue *q, struct queue_entry *entry) {
-    if (entry == NULL) {
-        // maybe an assert makes more sense here
-        return;
-    }
-
+    assert(entry != NULL);
     entry->next = NULL;
 
     pthread_mutex_lock(&q->lock);
@@ -52,7 +52,7 @@ void queue_push(struct queue *q, struct queue_entry *entry) {
         q->head = q->tail;
     } else {
         q->tail->next = entry;
-        q->tail = q->tail->next;
+        q->tail = entry;
     }
 
     pthread_mutex_unlock(&q->lock);
