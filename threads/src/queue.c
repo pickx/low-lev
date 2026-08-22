@@ -1,4 +1,5 @@
 #include "queue.h"
+#include "util.h"
 #include <assert.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -79,6 +80,8 @@ void queue_push(struct queue *q, struct queue_entry *entry) {
     int ret;
 
     while (queue_is_full(q)) {
+        debug_println("queue_push", "waiting (queue full)");
+
         // same comments as the `pthread_cond_wait` in `queue_pop`
         ret = pthread_cond_wait(&q->not_full, &q->lock);
         if (ret != 0) {
@@ -119,6 +122,8 @@ struct queue_entry *queue_pop(struct queue *q) {
     int ret;
 
     while (queue_is_empty(q)) {
+        debug_println("queue_pop", "waiting (queue empty)");
+        
         // this releases the mutex...
         ret = pthread_cond_wait(&q->not_empty, &q->lock);
         if (ret != 0) {

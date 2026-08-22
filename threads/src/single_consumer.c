@@ -1,4 +1,5 @@
 #include "queue.h"
+#include "util.h"
 #include <assert.h>
 #include <limits.h>
 #include <pthread.h>
@@ -6,16 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
-#ifdef DEBUG
-#define debug_printf(...)                                                      \
-    do {                                                                       \
-        printf(__VA_ARGS__);                                                   \
-        fflush(stdout);                                                        \
-    } while (0)
-#else
-#define debug_printf(...) ((void)0)
-#endif
 
 static void alloc_and_push(struct queue *q, int value) {
     struct queue_entry *entry = malloc(sizeof(struct queue_entry));
@@ -25,7 +16,7 @@ static void alloc_and_push(struct queue *q, int value) {
 
     queue_push(q, entry);
 
-    debug_printf("PRODUCER: pushed %d\n", value);
+    debug_println("producer", "push %d", value);
 }
 
 static void *producer_func(void *arg) {
@@ -65,7 +56,7 @@ static void *consumer_func(void *arg) {
         int value = popped->value;
         free(popped);
 
-        debug_printf("CONSUMER: pop %d\n", value);
+        debug_println("consumer", "pop %d", value);
 
         if (value == 0) {
             break;
