@@ -65,7 +65,7 @@ static void *consumer_func(void *arg) {
         int value = popped->value;
         free(popped);
 
-        debug_printf("CONSUMER: popped %d\n", value);
+        debug_printf("CONSUMER: pop %d\n", value);
 
         if (value == 0) {
             break;

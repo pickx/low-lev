@@ -3,7 +3,6 @@
 
 #include <pthread.h>
 #include <stdbool.h>
-#include <sys/_pthread/_pthread_cond_t.h>
 
 struct queue_entry {
     struct queue_entry *next;
