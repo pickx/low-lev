@@ -11,22 +11,13 @@ void queue_init(struct queue *q, size_t capacity) {
     int ret;
 
     ret = pthread_mutex_init(&q->lock, NULL);
-    if (ret != 0) {
-        fprintf(stderr, "pthread_mutex_init: %s\n", strerror(ret));
-        exit(EXIT_FAILURE);
-    }
+    check_ret(ret, "pthread_mutex_init");
 
     ret = pthread_cond_init(&q->not_empty, NULL);
-    if (ret != 0) {
-        fprintf(stderr, "pthread_cond_init of not_empty: %s\n", strerror(ret));
-        exit(EXIT_FAILURE);
-    }
+    check_ret(ret, "pthread_cond_init of not_empty");
 
     ret = pthread_cond_init(&q->not_full, NULL);
-    if (ret != 0) {
-        fprintf(stderr, "pthread_cond_init of not_full: %s\n", strerror(ret));
-        exit(EXIT_FAILURE);
-    }
+    check_ret(ret, "pthread_cond_init of not_full");
 
     q->len = 0;
 
@@ -52,10 +43,7 @@ bool queue_is_full(struct queue *q) {
 // 3. `q.lock` is not in use
 void queue_destroy(struct queue *q, bool free_list_entries) {
     int ret = pthread_mutex_destroy(&q->lock);
-    if (ret != 0) {
-        fprintf(stderr, "pthread_mutex_destroy: %s\n", strerror(ret));
-        exit(EXIT_FAILURE);
-    }
+    check_ret(ret, "pthread_mutex_destroy");
 
     if (free_list_entries) {
         struct queue_entry *entry = q->head;
@@ -84,10 +72,7 @@ void queue_push(struct queue *q, struct queue_entry *entry) {
 
         // same comments as the `pthread_cond_wait` in `queue_pop`
         ret = pthread_cond_wait(&q->not_full, &q->lock);
-        if (ret != 0) {
-            fprintf(stderr, "pthread_cond_wait of not_full: %s\n", strerror(ret));
-            exit(EXIT_FAILURE);
-        }
+        check_ret(ret, "pthread_cond_wait of not_full");
     }
 
     if (queue_is_empty(q)) {
@@ -101,10 +86,7 @@ void queue_push(struct queue *q, struct queue_entry *entry) {
     q->len += 1;
 
     ret = pthread_cond_signal(&q->not_empty);
-    if (ret != 0) {
-        fprintf(stderr, "pthread_cond_signal of not_empty: %s\n", strerror(ret));
-        exit(EXIT_FAILURE);
-    }
+    check_ret(ret, "pthread_cond_signal of not_empty");
 
     // as the signature of `pthread_cond_signal` shows,
     // signalling does not unlock the mutex.
@@ -126,10 +108,8 @@ struct queue_entry *queue_pop(struct queue *q) {
         
         // this releases the mutex...
         ret = pthread_cond_wait(&q->not_empty, &q->lock);
-        if (ret != 0) {
-            fprintf(stderr, "pthread_cond_wait of not_empty: %s\n", strerror(ret));
-            exit(EXIT_FAILURE);
-        }        
+        check_ret(ret, "pthread_cond_wait of not_empty");
+
         // ...and now that we're back here,
         // we have the mutex again.
         // however, we still need to re-check for NULL,
@@ -152,11 +132,8 @@ struct queue_entry *queue_pop(struct queue *q) {
     q->len -= 1;
 
     ret = pthread_cond_signal(&q->not_full);
-    if (ret != 0) {
-        fprintf(stderr, "pthread_cond_signal of not_full: %s\n", strerror(ret));
-        exit(EXIT_FAILURE);
-    }
-
+    check_ret(ret, "pthread_cond_signal of not_full");
+    
     pthread_mutex_unlock(&q->lock);
 
     return entry;

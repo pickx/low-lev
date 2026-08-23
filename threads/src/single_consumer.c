@@ -8,17 +8,6 @@
 #include <string.h>
 #include <time.h>
 
-static void alloc_and_push(struct queue *q, int value) {
-    struct queue_entry *entry = malloc(sizeof(struct queue_entry));
-    assert(entry != NULL);
-
-    entry->value = value;
-
-    queue_push(q, entry);
-
-    debug_println("producer", "push %d", value);
-}
-
 static void *producer_func(void *arg) {
     struct queue *q = arg;
 
@@ -68,13 +57,6 @@ static void *consumer_func(void *arg) {
     fclose(file); // not checking return value here
 
     return NULL;
-}
-
-static void check_ret(int ret, const char *func_name) {
-    if (ret != 0) {
-        fprintf(stderr, "%s: %s\n", func_name, strerror(ret));
-        exit(EXIT_FAILURE);
-    }
 }
 
 int main() {
