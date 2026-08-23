@@ -44,8 +44,16 @@ bool queue_is_full(struct queue *q) {
 // 2. `q` has not been destroyed
 // 3. `q.lock` is not in use
 void queue_destroy(struct queue *q, bool free_list_entries) {
-    int ret = pthread_mutex_destroy(&q->lock);
+    int ret;
+
+    ret = pthread_mutex_destroy(&q->lock);
     check_ret(ret, "pthread_mutex_destroy");
+
+    ret = pthread_cond_destroy(&q->not_empty);
+    check_ret(ret, "pthread_cond_destroy (not_empty)");
+
+    ret = pthread_cond_destroy(&q->not_full);
+    check_ret(ret, "pthread_cond_destroy (not_full)");
 
     if (free_list_entries) {
         struct queue_entry *entry = q->head;
@@ -72,12 +80,13 @@ void queue_disable(struct queue *q) {
     assert(!q->disabled);
     q->disabled = true;
 
+    // gotta wake up any threads sleeping in `queue_pop`
+    pthread_cond_broadcast(&q->not_empty);
+
     pthread_mutex_unlock(&q->lock);
 }
 
 void queue_push(struct queue *q, struct queue_entry *entry) {
-    assert(!q->disabled);
-
     assert(entry != NULL);
     entry->next = NULL;
 
@@ -142,6 +151,17 @@ struct queue_entry *queue_pop(struct queue *q) {
         // 2. spurious wakeups
     }
 
+    // we need to check _again_ in case we were
+    // woken up by `queue_disable`.
+    // and we can't combine this with the above
+    // `disabled` check, because it can
+    // cause indefinite sleep
+    if (q->disabled) {
+        pthread_mutex_unlock(&q->lock);
+        return NULL;
+    }
+
+    
     entry = q->head;
 
     q->head = q->head->next;

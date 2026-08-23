@@ -87,7 +87,7 @@ int main() {
     ret = pthread_create(&producer, NULL, producer_func, &q);
     check_ret(ret, "pthread_create (producer)");
     
-    int fd = open("queue_values.txt", O_APPEND | O_WRONLY);
+    int fd = open("queue_values.txt", O_APPEND | O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (fd == -1) {
         perror("open");
         exit(EXIT_FAILURE);
