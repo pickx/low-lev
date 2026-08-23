@@ -3,6 +3,9 @@
 
 #include <stdio.h>
 
+// XXX: this is not concurrent,
+// but we call it from the multi-consumer program.
+// might fix later.
 #define debug_println(sender, ...)                                             \
     do {                                                                       \
         printf("%s: ", sender);                                                \

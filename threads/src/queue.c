@@ -24,6 +24,8 @@ void queue_init(struct queue *q, size_t capacity) {
     assert(capacity >= 0);
     q->capacity = capacity;
 
+    q->disabled = false;
+
     q->head = NULL;
     q->tail = NULL;
 }
@@ -57,9 +59,25 @@ void queue_destroy(struct queue *q, bool free_list_entries) {
     q->head = NULL;
     q->tail = NULL;
     q->len = 0;
+
+    // can assert that this is true when
+    // entering this function, but that just
+    // adds extra steps to `queue_destroy`
+    q->disabled = true;
+}
+
+void queue_disable(struct queue *q) {
+    pthread_mutex_lock(&q->lock);
+
+    assert(!q->disabled);
+    q->disabled = true;
+
+    pthread_mutex_unlock(&q->lock);
 }
 
 void queue_push(struct queue *q, struct queue_entry *entry) {
+    assert(!q->disabled);
+
     assert(entry != NULL);
     entry->next = NULL;
 
@@ -96,8 +114,14 @@ void queue_push(struct queue *q, struct queue_entry *entry) {
     pthread_mutex_unlock(&q->lock);
 }
 
+// returns NULL iff the queue is inactive
 struct queue_entry *queue_pop(struct queue *q) {
     pthread_mutex_lock(&q->lock);
+
+    if (q->disabled) {
+        pthread_mutex_unlock(&q->lock);
+        return NULL;
+    }
 
     struct queue_entry *entry = NULL;
 

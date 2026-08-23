@@ -17,10 +17,12 @@ struct queue {
     size_t capacity;
     pthread_cond_t not_empty;
     pthread_cond_t not_full;
+    bool disabled;
 };
 
 void queue_init(struct queue *q, size_t capacity);
 void queue_destroy(struct queue *q, bool free_list_entries);
+void queue_disable(struct queue *q);
 void queue_push(struct queue *q, struct queue_entry *entry);
 struct queue_entry *queue_pop(struct queue *q);
 
