@@ -51,7 +51,6 @@ static void *consumer_func(void *arg) {
     struct queue *q = arg;
 
     struct queue_entry *popped;
-    struct timespec cooldown = {0, 50000000};
 
     FILE *file = fopen("queue_values.txt", "w");
     if (file == NULL) {
@@ -60,22 +59,18 @@ static void *consumer_func(void *arg) {
     }
 
     while (true) {
+        // this statement blocks until a value is available
         popped = queue_pop(q);
 
-        if (popped == NULL) {
-            debug_printf("CONSUMER: empty queue, sleeping\n");
-            nanosleep(&cooldown, NULL); // not checking return value here
+        int value = popped->value;
+        free(popped);
+
+        debug_printf("CONSUMER: popped %d\n", value);
+
+        if (value == 0) {
+            break;
         } else {
-            int value = popped->value;
-            free(popped);
-
-            debug_printf("CONSUMER: popped %d\n", value);
-
-            if (value == 0) {
-                break;
-            } else {
-                fprintf(file, "%d\n", value);
-            }
+            fprintf(file, "%d\n", value);
         }
     }
 
