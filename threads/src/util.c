@@ -1,4 +1,3 @@
-#include "queue.h"
 #include "util.h"
 
 #include <assert.h>

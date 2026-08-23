@@ -1,6 +1,7 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include "queue.h"
 #include <stdio.h>
 
 // XXX: this is not concurrent,
