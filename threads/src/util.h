@@ -1,7 +1,9 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include "../../shared/shared.h"
 #include "queue.h"
+
 #include <stdio.h>
 
 // XXX: this is not concurrent,
@@ -15,7 +17,6 @@
         fflush(stdout);                                                        \
     } while (0)
 
-void check_ret(int ret, const char *desc);
 void alloc_and_push(struct queue *q, int value);
 
 #endif

@@ -1,5 +1,6 @@
 #include "queue.h"
 #include "util.h"
+
 #include <assert.h>
 #include <limits.h>
 #include <pthread.h>
@@ -74,19 +75,19 @@ int main() {
     srand(time(NULL));
 
     ret = pthread_create(&producer, NULL, producer_func, &q);
-    check_ret(ret, "pthread_create (producer)");
+    check_ret_nonzero(ret, "pthread_create (producer)");
 
     ret = pthread_create(&consumer, NULL, consumer_func, &q);
-    check_ret(ret, "pthread_create (consumer)");
+    check_ret_nonzero(ret, "pthread_create (consumer)");
 
     // producer signals exit to consumer,
     // ...therefore we join on producer first.
 
     ret = pthread_join(producer, NULL);
-    check_ret(ret, "pthread_join (producer)");
+    check_ret_nonzero(ret, "pthread_join (producer)");
 
     ret = pthread_join(consumer, NULL);
-    check_ret(ret, "pthread_join (consumer)");
+    check_ret_nonzero(ret, "pthread_join (consumer)");
 
     queue_destroy(&q, false);
 }

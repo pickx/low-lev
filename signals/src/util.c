@@ -1,25 +1,4 @@
-#include "helpers.h"
-
-int parse_int(const char *s, int *out) {
-    if (s == NULL || *s == '\0') {
-        return -1;
-    }
-
-    char *endptr;
-    errno = 0;
-    long val = strtol(s, &endptr, 10);
-
-    if (errno != 0 || endptr == s || *endptr != '\0') {
-        return -1;
-    }
-
-    if (val < INT_MIN || val > INT_MAX) {
-        return -1;
-    }
-
-    *out = (int)val;
-    return 0;
-}
+#include "util.h"
 
 bool is_exit_input(const char *s) {
     while (isspace((unsigned char)*s)) {

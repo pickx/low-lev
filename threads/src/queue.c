@@ -1,5 +1,6 @@
 #include "queue.h"
 #include "util.h"
+
 #include <assert.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -11,13 +12,13 @@ void queue_init(struct queue *q, size_t capacity) {
     int ret;
 
     ret = pthread_mutex_init(&q->lock, NULL);
-    check_ret(ret, "pthread_mutex_init");
+    check_ret_nonzero(ret, "pthread_mutex_init");
 
     ret = pthread_cond_init(&q->not_empty, NULL);
-    check_ret(ret, "pthread_cond_init of not_empty");
+    check_ret_nonzero(ret, "pthread_cond_init of not_empty");
 
     ret = pthread_cond_init(&q->not_full, NULL);
-    check_ret(ret, "pthread_cond_init of not_full");
+    check_ret_nonzero(ret, "pthread_cond_init of not_full");
 
     q->len = 0;
 
@@ -45,13 +46,13 @@ void queue_destroy(struct queue *q, bool free_list_entries) {
     int ret;
 
     ret = pthread_mutex_destroy(&q->lock);
-    check_ret(ret, "pthread_mutex_destroy");
+    check_ret_nonzero(ret, "pthread_mutex_destroy");
 
     ret = pthread_cond_destroy(&q->not_empty);
-    check_ret(ret, "pthread_cond_destroy (not_empty)");
+    check_ret_nonzero(ret, "pthread_cond_destroy (not_empty)");
 
     ret = pthread_cond_destroy(&q->not_full);
-    check_ret(ret, "pthread_cond_destroy (not_full)");
+    check_ret_nonzero(ret, "pthread_cond_destroy (not_full)");
 
     if (free_list_entries) {
         struct queue_entry *entry = q->head;
@@ -98,7 +99,7 @@ void queue_push(struct queue *q, struct queue_entry *entry) {
 
         // same comments as the `pthread_cond_wait` in `queue_pop`
         ret = pthread_cond_wait(&q->not_full, &q->lock);
-        check_ret(ret, "pthread_cond_wait of not_full");
+        check_ret_nonzero(ret, "pthread_cond_wait of not_full");
     }
 
     if (queue_is_empty(q)) {
@@ -113,7 +114,7 @@ void queue_push(struct queue *q, struct queue_entry *entry) {
 
     if (q->consumers_waiting >= 1) {
         ret = pthread_cond_signal(&q->not_empty);
-        check_ret(ret, "pthread_cond_signal of not_empty");
+        check_ret_nonzero(ret, "pthread_cond_signal of not_empty");
     }
 
     // as the signature of `pthread_cond_signal` shows,
@@ -135,7 +136,7 @@ struct queue_entry *queue_pop(struct queue *q) {
         // so it attempts to wake up a sleeping thread
         // to avoid indefinite sleep
         ret = pthread_cond_signal(&q->not_empty);
-        check_ret(ret, "pthread_cond_signal of not_empty");
+        check_ret_nonzero(ret, "pthread_cond_signal of not_empty");
 
         pthread_mutex_unlock(&q->lock);
         return NULL;
@@ -152,7 +153,7 @@ struct queue_entry *queue_pop(struct queue *q) {
         q->consumers_waiting += 1;
 
         ret = pthread_cond_wait(&q->not_empty, &q->lock);
-        check_ret(ret, "pthread_cond_wait of not_empty");
+        check_ret_nonzero(ret, "pthread_cond_wait of not_empty");
 
         // the thread handles its own count,
         // instead of letting `push` do it,
@@ -193,7 +194,7 @@ struct queue_entry *queue_pop(struct queue *q) {
 
     if (q->len == q->capacity - 1) {
         ret = pthread_cond_signal(&q->not_full);
-        check_ret(ret, "pthread_cond_signal of not_full");
+        check_ret_nonzero(ret, "pthread_cond_signal of not_full");
     }
 
     pthread_mutex_unlock(&q->lock);
