@@ -177,6 +177,10 @@ struct queue_entry *queue_pop(struct queue *q) {
 
     ret = pthread_cond_signal(&q->not_full);
     check_ret(ret, "pthread_cond_signal of not_full");
+    if (q->len == q->capacity - 1) {
+        ret = pthread_cond_signal(&q->not_full);
+        check_ret(ret, "pthread_cond_signal of not_full");
+    }
     
     pthread_mutex_unlock(&q->lock);
 
