@@ -128,14 +128,20 @@ void queue_push(struct queue *q, struct queue_entry *entry) {
 struct queue_entry *queue_pop(struct queue *q) {
     pthread_mutex_lock(&q->lock);
 
-    if (q->disabled) {
+    int ret;
+
+    if (q->disabled && queue_is_empty(q)) {
+        // this thread will never try polling again,
+        // so it attempts to wake up a sleeping thread
+        // to avoid indefinite sleep
+        ret = pthread_cond_signal(&q->not_empty);
+        check_ret(ret, "pthread_cond_signal of not_empty");
+
         pthread_mutex_unlock(&q->lock);
         return NULL;
     }
 
     struct queue_entry *entry = NULL;
-
-    int ret;
 
     while (queue_is_empty(q)) {
         debug_println("queue_pop", "waiting (queue empty)");
