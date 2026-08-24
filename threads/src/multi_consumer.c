@@ -117,6 +117,5 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-
     queue_destroy(&q, false);
 }

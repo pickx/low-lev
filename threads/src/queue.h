@@ -17,6 +17,7 @@ struct queue {
     size_t capacity;
     pthread_cond_t not_empty;
     pthread_cond_t not_full;
+    size_t consumers_waiting;
     bool disabled;
 };
 

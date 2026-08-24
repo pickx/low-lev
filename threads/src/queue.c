@@ -24,6 +24,8 @@ void queue_init(struct queue *q, size_t capacity) {
     assert(capacity >= 0);
     q->capacity = capacity;
 
+    q->consumers_waiting = 0;
+
     q->disabled = false;
 
     q->head = NULL;
@@ -67,6 +69,7 @@ void queue_destroy(struct queue *q, bool free_list_entries) {
     q->head = NULL;
     q->tail = NULL;
     q->len = 0;
+    q->consumers_waiting = 0;
 
     // can assert that this is true when
     // entering this function, but that just
@@ -112,8 +115,10 @@ void queue_push(struct queue *q, struct queue_entry *entry) {
 
     q->len += 1;
 
-    ret = pthread_cond_signal(&q->not_empty);
-    check_ret(ret, "pthread_cond_signal of not_empty");
+    if (q->consumers_waiting >= 1) {
+        ret = pthread_cond_signal(&q->not_empty);
+        check_ret(ret, "pthread_cond_signal of not_empty");
+    }
 
     // as the signature of `pthread_cond_signal` shows,
     // signalling does not unlock the mutex.
@@ -139,9 +144,19 @@ struct queue_entry *queue_pop(struct queue *q) {
     while (queue_is_empty(q)) {
         debug_println("queue_pop", "waiting (queue empty)");
         
-        // this releases the mutex...
+        // this releases the mutex,
+        // but also updates the state to signal that this
+        // thread is also waiting on the condvar.
+        q->consumers_waiting += 1;
+        
         ret = pthread_cond_wait(&q->not_empty, &q->lock);
         check_ret(ret, "pthread_cond_wait of not_empty");
+
+        // the thread handles its own count,
+        // instead of letting `push` do it,
+        // among other things, this means
+        // spurious wakeups won't screw up the count
+        q->consumers_waiting -= 1;
 
         // ...and now that we're back here,
         // we have the mutex again.
@@ -161,7 +176,6 @@ struct queue_entry *queue_pop(struct queue *q) {
         return NULL;
     }
 
-    
     entry = q->head;
 
     q->head = q->head->next;
@@ -175,8 +189,6 @@ struct queue_entry *queue_pop(struct queue *q) {
 
     q->len -= 1;
 
-    ret = pthread_cond_signal(&q->not_full);
-    check_ret(ret, "pthread_cond_signal of not_full");
     if (q->len == q->capacity - 1) {
         ret = pthread_cond_signal(&q->not_full);
         check_ret(ret, "pthread_cond_signal of not_full");
