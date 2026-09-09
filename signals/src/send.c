@@ -4,9 +4,7 @@
 #include <stdlib.h>
 #include <sys/resource.h>
 
-int main(int argc, char *argv[])
-{
-
+int main(int argc, char *argv[]) {
     if (argc != 2) {
         fprintf(stderr, "usage: %s <pid>\n", argv[0]);
         return 1;
@@ -24,7 +22,7 @@ int main(int argc, char *argv[])
     int high = low + 2;
 
     char buf[32];
-        
+
     int count;
     int signal;
     char tail[2]; // handles trailing whitespace in `sscanf`
@@ -36,7 +34,12 @@ int main(int argc, char *argv[])
     }
 
     while (1) {
-        printf("count and signal (%d - %d)? signal queue limit is %lu: ", low, high, rlim.rlim_cur);
+        printf(
+            "count and signal (%d - %d)? signal queue limit is %lu: ",
+            low,
+            high,
+            rlim.rlim_cur
+        );
 
         if (fgets(buf, sizeof buf, stdin) == NULL) {
             return 0;
@@ -50,11 +53,7 @@ int main(int argc, char *argv[])
         }
 
         int arg_count = sscanf(buf, "%d %d %1s", &count, &signal, tail);
-        if (
-            arg_count == 2
-            && count >= 0
-            && (low <= signal && signal <= high)
-        ) {
+        if (arg_count == 2 && count >= 0 && (low <= signal && signal <= high)) {
             for (int i = 0; i < count; i += 1) {
                 try_signal(pid, signal);
             }
@@ -63,6 +62,6 @@ int main(int argc, char *argv[])
             printf("invalid input\n");
         }
     }
-    
+
     return 0;
 }

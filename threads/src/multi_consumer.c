@@ -2,13 +2,13 @@
 #include "util.h"
 
 #include <assert.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <fcntl.h>
 #include <unistd.h>
 
 static void *producer_func(void *arg) {
@@ -55,7 +55,7 @@ static void *consumer_func(void *arg) {
             free(popped);
 
             debug_println("consumer", "pop %d", value);
-            
+
             size_t len = sprintf(buf, "%d\n", value);
             int ret = write(fd, buf, len);
             if (ret == -1) {
@@ -86,15 +86,16 @@ int main() {
 
     ret = pthread_create(&producer, NULL, producer_func, &q);
     check_ret(ret, "pthread_create (producer)");
-    
-    int fd = open("queue_values.txt", O_APPEND | O_WRONLY | O_CREAT | O_TRUNC, 0644);
+
+    int fd =
+        open("queue_values.txt", O_APPEND | O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (fd == -1) {
         perror("open");
         exit(EXIT_FAILURE);
     }
 
-    struct consumer_arg consumer_arg = { &q, fd };
-    
+    struct consumer_arg consumer_arg = {&q, fd};
+
     for (int i = 0; i < consumer_count; i += 1) {
         ret = pthread_create(&consumers[i], NULL, consumer_func, &consumer_arg);
         check_ret(ret, "pthread_create (consumer)");

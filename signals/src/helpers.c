@@ -1,7 +1,6 @@
 #include "helpers.h"
 
-int parse_int(const char *s, int *out)
-{
+int parse_int(const char *s, int *out) {
     if (s == NULL || *s == '\0') {
         return -1;
     }
@@ -22,8 +21,7 @@ int parse_int(const char *s, int *out)
     return 0;
 }
 
-bool is_exit_input(const char *s)
-{
+bool is_exit_input(const char *s) {
     while (isspace((unsigned char)*s)) {
         s++;
     }

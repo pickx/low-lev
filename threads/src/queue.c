@@ -32,13 +32,9 @@ void queue_init(struct queue *q, size_t capacity) {
     q->tail = NULL;
 }
 
-bool queue_is_empty(struct queue *q) {
-    return q->len == 0;
-}
+bool queue_is_empty(struct queue *q) { return q->len == 0; }
 
-bool queue_is_full(struct queue *q) {
-    return q->len >= q->capacity;
-}
+bool queue_is_full(struct queue *q) { return q->len >= q->capacity; }
 
 // SAFETY: this is non-reentrant,
 // and caller asserts that:
@@ -143,12 +139,12 @@ struct queue_entry *queue_pop(struct queue *q) {
 
     while (queue_is_empty(q)) {
         debug_println("queue_pop", "waiting (queue empty)");
-        
+
         // this releases the mutex,
         // but also updates the state to signal that this
         // thread is also waiting on the condvar.
         q->consumers_waiting += 1;
-        
+
         ret = pthread_cond_wait(&q->not_empty, &q->lock);
         check_ret(ret, "pthread_cond_wait of not_empty");
 
@@ -193,7 +189,7 @@ struct queue_entry *queue_pop(struct queue *q) {
         ret = pthread_cond_signal(&q->not_full);
         check_ret(ret, "pthread_cond_signal of not_full");
     }
-    
+
     pthread_mutex_unlock(&q->lock);
 
     return entry;
