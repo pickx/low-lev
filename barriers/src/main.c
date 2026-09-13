@@ -74,29 +74,24 @@ int main(int argc, char *argv[]) {
     int ret = pthread_barrier_init(&barrier, NULL, cell_len);
     check_ret_nonzero(ret, "pthread_barrier_init");
 
-    for (int row = 0; row < board.dim.rows; row += 1) {
-        for (int col = 0; col < board.dim.cols; col += 1) {
-            int idx = to_idx(&board.dim, row, col);
+    for (int idx = 0; idx < cell_len; idx += 1) {
+        int row = to_row(&board.dim, idx);
+        int col = to_col(&board.dim, idx);
 
-            c_args[idx] = (struct CellArg){
-                .row = row,
-                .col = col,
-                .board = &board,
-                .barrier = &barrier,
-            };
+        c_args[idx] = (struct CellArg){
+            .row = row,
+            .col = col,
+            .board = &board,
+            .barrier = &barrier,
+        };
 
-            ret =
-                pthread_create(&threads[idx], NULL, cell_thread, &c_args[idx]);
-            check_ret_nonzero(ret, "pthread_create of (%d, %d)", row, col);
-        }
+        ret = pthread_create(&threads[idx], NULL, cell_thread, &c_args[idx]);
+        check_ret_nonzero(ret, "pthread_create of (%d, %d)", row, col);
     }
 
-    for (int row = 0; row < board.dim.rows; row += 1) {
-        for (int col = 0; col < board.dim.cols; col += 1) {
-            int idx = to_idx(&board.dim, row, col);
-            ret = pthread_join(threads[idx], NULL);
-            check_ret_nonzero(ret, "pthread_join of (%d, %d)", row, col);
-        }
+    for (int idx = 0; idx < cell_len; idx += 1) {
+        ret = pthread_join(threads[idx], NULL);
+        check_ret_nonzero(ret, "pthread_join");
     }
 
     ret = pthread_barrier_destroy(&barrier);

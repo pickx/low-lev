@@ -10,6 +10,10 @@ int to_idx(const struct Dimensions *dim, int row, int col) {
     return (row * dim->cols) + col;
 }
 
+int to_row(const struct Dimensions *dim, int idx) { return idx / dim->cols; }
+
+int to_col(const struct Dimensions *dim, int idx) { return idx % dim->cols; }
+
 static bool parse_dim(char *arg, int *dim) {
     if (!parse_int(arg, dim)) {
         fprintf(stderr, "bad arg: %s\n", arg);

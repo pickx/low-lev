@@ -23,6 +23,8 @@ struct Pos {
 
 int len(const struct Dimensions *dim);
 int to_idx(const struct Dimensions *dim, int row, int col);
+int to_row(const struct Dimensions *dim, int idx);
+int to_col(const struct Dimensions *dim, int idx);
 
 bool init_from_args(struct Board *board, char *arg1, char *arg2);
 void free_board(struct Board *board);
